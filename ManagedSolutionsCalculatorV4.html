@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Advisor Platform Cost Calculator</title>
+<style>
+  :root{
+    --color-1:#741545; --color-2:#4E4E4E; --color-3:#751645; --color-4:#4D4F4F; --color-5:#751447;
+    --bg:#f7f7f8; --card:#ffffff; --border:#e5e7eb; --muted:#6b7280; --row:#f9fafb;
+    --good:#e7f7ea; --bad:#fde8e8; --ink-good:#0a6b2d; --ink-bad:#a11f1f;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:#111;
+    font:14px/1.45 system-ui,Segoe UI,Roboto,Arial
+  }
+  .container{
+    max-width:1160px;
+    margin:40px auto;
+    padding:0 18px
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    box-shadow:0 1px 2px rgba(16,24,40,.04);
+    overflow:hidden;
+    margin-bottom:28px
+  }
+  .card__head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--color-1);
+    color:#fff;
+    padding:14px 18px;
+    font-weight:700
+  }
+  .btn, select{
+    background:#fff;
+    color:var(--color-1);
+    border:0;
+    border-radius:10px;
+    padding:8px 12px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 1px 2px rgba(16,24,40,.2)
+  }
+  .btn:hover{
+    opacity:.95
+  }
+  .grid{
+    display:grid;
+    gap:10px 18px
+  }
+  .grid--inputs{
+    grid-template-columns:1.4fr 1fr 1fr 1fr;
+    padding:18px
+  }
+  .th{
+    font-weight:700;
+    text-align:center;
+    color:#fff;
+    background:#4d4f4f;
+    border-radius:8px;
+    padding:6px
+  }
+  .cell-label{
+    background:#f3f4f6;
+    padding:10px 12px;
+    border-radius:8px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:10px
+  }
+  .cell{
+    background:#f9fafb;
+    padding:10px 12px;
+    border-radius:8px;
+    text-align:right
+  }
+  /* .cell:has(input:invalid) {
+    background: var(--bad);
+    outline: thin solid red;
+  } */
+  .cell.invalid {
+    background: var(--bad);
+    outline: thin solid red;
+  }
+  .cell input, .cell select{
+    width:100%;
+    border:0;
+    background:transparent;
+    text-align:right;
+    font:inherit;
+    color:#111827;
+    outline:none
+  }
+  .muted, input:disabled{
+    color:#6b7280
+  } 
+  .center{
+    text-align:center
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px
+  }
+  thead th{
+    background:var(--color-3);
+    color:#fff;
+    padding:12px;
+    font-weight:700
+  }
+  tbody td{
+    padding:12px 10px;
+    border-bottom:1px solid var(--border)
+  }
+  tbody tr:nth-child(odd){
+    background:#fff
+  }
+  tbody tr:nth-child(even){
+    background:var(--row)
+  }
+  td:first-child{
+    text-align:left;
+    font-weight:500
+  }
+  td:not(:first-child){
+    text-align:center;
+    white-space:nowrap
+  }
+  .row-strong{
+    background:#eef2f7 !important;
+    font-weight:700;
+    border-bottom:2px solid #d1d5db
+  }
+  .totals{
+    background:var(--color-1) !important;
+    color:#fff;
+    font-weight:800
+  }
+  .good{
+    background:var(--good);
+    color:var(--ink-good);
+    font-weight:700
+  }
+  .bad{
+    background:var(--bad);
+    color:var(--ink-bad);
+    font-weight:700
+  }
+  details{
+    background:#fcfcfd;
+    border-top:1px solid var(--border)
+  }
+  details>summary{
+    cursor:pointer;
+    padding:14px 18px;
+    background:#f6eef6;
+    color:#3b0e2c;
+    font-weight:700
+  }
+  details .hidden-body{
+    padding:14px 18px
+  }
+  .inline-input{
+    display:inline-grid;
+    grid-template-columns:auto 160px;
+    gap:8px;
+    align-items:center
+  }
+  .small{
+    font-size:12px
+  }
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace
+  }
+  @media (max-width:980px){
+    .grid--inputs{grid-template-columns:1fr 1fr}
+    .grid--inputs .th:nth-child(3), .grid--inputs .th:nth-child(4){display:none}
+    .grid--inputs .cell:nth-child(4n-1), .grid--inputs .cell:nth-child(4n){display:none}
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Inputs -->
+    <div class="card" id="inputs-card">
+      <div class="card__head">
+        <span>Managed Solutions - Calculator</span>
+        <!-- <label for="autofillInputSelect" class="sr-only">Autofill Input:</label> -->
+        <div>
+          <select id="autofillInputSelect" name="autofillInputSelect" class="form-select">
+            <option value="">Autofill from Saved Forms</option>
+            <option value="Example 1">Example 1</option>
+            <option value="Example 2">Example 2</option>
+            <option value="Example 3">Example 3</option>
+          </select>
+          <button class="btn" id="saveInputBtn">Save Form</button>
+          <button class="btn" id="deleteSelectedSavedState">Delete Selected</button>
+          <button class="btn" id="deleteAllSavedStates">Delete All</button>
+        </div>
+        <button class="btn" id="resetBtn">Reset to Case</button>
+      </div>
+
+      <div class="grid grid--inputs">
+        <div></div>
+        <div class="th">Advisor</div>
+        <div class="th">UMA</div>
+        <div class="th">IFM</div>
+
+        <!-- AUM -->
+        <div class="cell-label">AUM</div>
+        <div class="cell"><input type="number" min="0" step="100000" id="aum"></div>
+        <div class="cell" id="aumUma"></div>
+        <div class="cell" id="aumIfm"></div>
+
+        <!-- Average Client Size -->
+        <div class="cell-label">Average Client Size</div>
+        <div class="cell"><input type="number" min="0" step="10000" id="avgClientSize"></div>
+        <div class="cell" id="avgClientSizeUma"></div>
+        <div class="cell" id="avgClientSizeIfm"></div>
+
+        <!-- # of Clients -->
+        <div class="cell-label">
+          # of Clients
+          <label class="inline-input" style="grid-template-columns:auto auto;gap:6px;margin-left:auto">
+            <input type="checkbox" id="autoClients" checked />
+            <span class="muted" style="font-size:12px">auto</span>
+          </label>
+        </div>
+        <div class="cell"><input type="number" min="0" step="10" id="numClients"></div>
+        <div class="cell" id="numClientsUma"></div>
+        <div class="cell" id="numClientsIfm"></div>
+
+        <!-- # of Accounts -->
+        <div class="cell-label"># of Accounts</div>
+        <div class="cell"><input type="number" min="0" sstep="10" id="numAccounts" disabled></div>
+        <div class="cell" id="numAccountsUma"></div>
+        <div class="cell" id="numAccountsIfm"></div>
+
+        <!-- Allocation mix -->
+        <div class="cell-label">% of Mutual Funds</div>
+        <div class="cell"><input type="number" min="0" step="5" id="mutualFundsPct" class="alloc-weight"></div>
+        <div class="cell center muted">30%</div>
+        <div class="cell center muted">55%</div>
+
+        <div class="cell-label">% of ETFs</div>
+        <div class="cell"><input type="number" min="0" step="5" id="etfsPct" class="alloc-weight"></div>
+        <div class="cell center muted">15%</div>
+        <div class="cell center muted">25%</div>
+
+        <div class="cell-label">% of Stocks</div>
+        <div class="cell"><input type="number" min="0" step="5" id="stocksPct" class="alloc-weight"></div>
+        <div class="cell center muted">5%</div>
+        <div class="cell center muted">12%</div>
+
+        <div class="cell-label">% of Fixed Income</div>
+        <div class="cell"><input type="number" min="0" step="5" id="fiPct" class="alloc-weight"></div>
+        <div class="cell center muted">20%</div>
+        <div class="cell center muted">3%</div>
+
+        <div class="cell-label">% of SMA</div>
+        <div class="cell"><input type="number" min="0" step="5" id="smaPct" class="alloc-weight"></div>
+        <div class="cell center muted">30%</div>
+        <div class="cell center muted">5%</div>
+
+        <!-- # of securities in portfolio -->
+        <div class="cell-label"># of Securities in Portfolio - ETFs</div>
+        <div class="cell"><input type="number" min="0" id="etfSecs"></div>
+        <div class="cell center muted">1</div>
+        <div class="cell center muted">5</div><!-- IFM hard-coded -->
+
+        <div class="cell-label"># of Securities in Portfolio - Stocks</div>
+        <div class="cell"><input type="number" min="0" id="stockSecs"></div>
+        <div class="cell center muted">1</div>
+        <div class="cell center muted">10</div><!-- IFM hard-coded -->
+
+        <div class="cell-label"># of Securities in Portfolio - Fixed Income</div>
+        <div class="cell"><input type="number" min="0" id="fiSecs"></div>
+        <div class="cell center muted">2</div>
+        <div class="cell center muted">4</div><!-- IFM hard-coded -->
+
+        <!-- Product fees -->
+        <div class="cell-label">Product Cost — MF (%)</div>
+        <div class="cell"><input type="number" min="0" id="mfCost" step="0.01"></div>
+        <div class="cell center muted">0.40%</div>
+        <div class="cell center muted">0.40%</div>
+
+        <div class="cell-label">Product Cost — SMA (%)</div>
+        <div class="cell"><input type="number" min="0" id="smaCost" step="0.01"></div>
+        <div class="cell center muted">0.25%</div>
+        <div class="cell center muted">0.25%</div><!-- IFM hard-coded -->
+
+        <div class="cell-label">Product Cost — ETF (%)</div>
+        <div class="cell"><input type="number" min="0" id="etfCost" step="0.01"></div>
+        <div class="cell center muted">0.25%</div>
+        <div class="cell center muted">0.25%</div>
+
+        <!-- Trading/Admin -->
+        <div class="cell-label">Trade Cost ($)</div>
+        <div class="cell"><input type="number" min="0" id="tradeCost" step="1"></div>
+        <div class="cell center muted">0</div>
+        <div class="cell center muted">$20.00</div>
+
+        <div class="cell-label">Allocation Cost</div>
+        <div class="cell"><input type="number" min="0" id="allocationCost" step="1"></div>
+        <div class="cell center muted">—</div>
+        <div class="cell center muted">—</div>
+
+        <div class="cell-label">Trading Frequency (per year)</div>
+        <div class="cell"><input type="number" min="0" id="tradingFreq"></div>
+        <div class="cell center muted">4</div>
+        <div class="cell center muted">12</div>
+
+        <div class="cell-label">Task Time (TRADE) (mins)</div>
+        <div class="cell"><input type="number" min="0" id="tradeTime"></div>
+        <div class="cell center muted">0</div>
+        <div class="cell center muted">15</div>
+
+        <div class="cell-label">Admin Staff Hourly ($)</div>
+        <div class="cell"><input type="number" min="0" id="adminHourly"></div>
+        <div class="cell center muted">29.33</div>
+        <div class="cell center muted">29.33</div>
+
+        <div class="cell-label">Program Fee (% of AUM)</div>
+        <div class="cell"><input type="number" min="0" id="programFee" step="0.01"></div>
+        <div class="cell center muted">0.15%</div>
+        <div class="cell center muted">0.10%</div>
+      </div>
+
+      <!-- IFM Program Expense breakdown -->
+      <details>
+        <summary>Pooled Fund Expense Estimator — Break Down</summary>
+        <div class="hidden-body small">
+          <div class="inline-input" style="margin-bottom:10px;">
+            <label>IFM NAV Frequency</label>
+            <select id="ifmNav">
+              <option>Weekly</option>
+              <option>Monthly</option>
+              <option>Daily</option>
+            </select>
+          </div>
+
+          <div id="ifmBreakdown" class="mono"></div>
+          <div style="margin-top:10px;">
+            Total Expense Ratio Excluding Embedded Costs (bps): <strong id="ifmTrueBps">0.0000</strong>
+          </div>
+          <div>TRUE Program Dollars: <strong id="ifmTrueProgram">$0.00</strong></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+      <div class="card__head">Cost Comparison Results</div>
+      <div style="padding:18px;">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Retail Output</th>
+              <th>PM/APM Output</th>
+              <th>UMA Output</th>
+              <th>Cost Savings - UMA</th>
+              <th>IFM Output</th>
+              <th>Cost Savings - IFM</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Disclaimer Section -->
+    <div class="card">
+      <div class="card__head">Disclaimers</div>
+      <div style="padding:18px; line-height:1.6; color:var(--color-2);">
+        <p><strong>Demonstrative Calculations and Projections:</strong><br>
+        Calculations and projections presented in this report are for illustrative purposes only. They are constructed based on various assumptions and actual outcomes may differ, substantially from forecasts.</p>
+
+        <p><strong>Reliability of Sourced Information:</strong><br>
+        The information provided herein is sourced from sources believed to be reliable, but ACPI makes no warranty regarding its accuracy or fitness for a particular purpose.</p>
+      </div>
+    </div>
+  </div> <!-- end container -->
+
+<script>
+  // Helpers
+  const money = (n) => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2}).format(n);
+  const setText = (id, val) => document.getElementById(id).textContent = val;
+  const N = (id) => +document.getElementById(id).value || 0;
+
+  // IFM trade constants
+  const IFM_BLOCK_TRADES = 19;
+  const IFM_TRADE_FREQ   = 12;
+  const IFM_PER_TRADE_COST = 20;
+
+  // Shareholder/Recordkeeping base ($) BEFORE HST — per your spec it’s 28.31
+  const RECORD_BASE_PER_ACCOUNT = 28.31;
+
+  // Baseline (BASE case)
+  const BASE = {
+    aum: 75000000,
+    avgClient: 300000,
+    autoClients: true,
+    numClients: 250, // auto from AUM/Avg
+    numAccounts: 750, // auto from AUM/Avg
+    mutualFundsPct: 60, etfsPct: 15, stocksPct: 5, fiPct: 20, smaPct: 0,
+    etfSecs: 1, stockSecs: 1, fiSecs: 2,
+    mfCost: 0.85, smaCost: 0.25, etfCost: 0.25,
+    tradeCost: 15, allocationCost: 5, tradingFreq: 4, tradeTime: 15, adminHourly: 29.3333333333,
+    programFeePct: 0,
+    ifmNav: "Weekly"
+  };
+
+  function loadState(S){
+    if (S == undefined || S == {}) return; 
+
+    document.getElementById('aum').value = S.aum;
+    document.getElementById('avgClientSize').value = S.avgClient;
+
+    document.getElementById('autoClients').checked = S.autoClients;
+    document.getElementById('numClients').disabled = S.autoClients;
+    document.getElementById('numClients').value = S.numClients;
+
+    document.getElementById('numAccounts').disabled = true; // always disabled?
+    document.getElementById('numAccounts').value = S.numAccounts;
+
+    if (S.autoClients) autoFillClientsAndAccounts();
+
+    document.getElementById('mutualFundsPct').value = S.mutualFundsPct;
+    document.getElementById('etfsPct').value = S.etfsPct;
+    document.getElementById('stocksPct').value = S.stocksPct;
+    document.getElementById('fiPct').value = S.fiPct;
+    document.getElementById('smaPct').value = S.smaPct;
+
+    document.getElementById('etfSecs').value = S.etfSecs;
+    document.getElementById('stockSecs').value = S.stockSecs;
+    document.getElementById('fiSecs').value = S.fiSecs;
+
+    document.getElementById('mfCost').value = S.mfCost;
+    document.getElementById('smaCost').value = S.smaCost;
+    document.getElementById('etfCost').value = S.etfCost;
+
+    document.getElementById('tradeCost').value = S.tradeCost; // Advisor per-trade (editable)
+    document.getElementById('allocationCost').value = S.allocationCost; // PM/APM per-trade
+    document.getElementById('tradingFreq').value = S.tradingFreq;
+    document.getElementById('tradeTime').value = S.tradeTime;
+    document.getElementById('adminHourly').value = S.adminHourly;
+    document.getElementById('programFee').value = S.programFeePct;
+
+    document.getElementById('ifmNav').value = S.ifmNav;
+  }
+
+  function getState() {
+    const S = {};
+    S.aum = document.getElementById('aum').value;
+    S.avgClient = document.getElementById('avgClientSize').value;
+
+    S.autoClients = document.getElementById('autoClients').checked;
+    // document.getElementById('numClients').disabled = S.autoClients;
+    S.numClients = document.getElementById('numClients').value;
+
+    //  document.getElementById('numAccounts').disabled = true; // always disabled?
+    S.numAccounts = document.getElementById('numAccounts').value;
+
+    // if (S.autoClients) autoFillClientsAndAccounts();
+
+    S.mutualFundsPct = document.getElementById('mutualFundsPct').value;
+    S.etfsPct = document.getElementById('etfsPct').value;
+    S.stocksPct = document.getElementById('stocksPct').value;
+    S.fiPct = document.getElementById('fiPct').value;
+    S.smaPct = document.getElementById('smaPct').value;
+
+    S.etfSecs = document.getElementById('etfSecs').value;
+    S.stockSecs = document.getElementById('stockSecs').value;
+    S.fiSecs = document.getElementById('fiSecs').value;
+
+    S.mfCost = document.getElementById('mfCost').value;
+    S.smaCost = document.getElementById('smaCost').value;
+    S.etfCost = document.getElementById('etfCost').value;
+
+    S.tradeCost = document.getElementById('tradeCost').value; // Advisor per-trade (editable)
+    S.allocationCost = document.getElementById('allocationCost').value; // PM/APM per-trade
+    S.tradingFreq = document.getElementById('tradingFreq').value;
+    S.tradeTime = document.getElementById('tradeTime').value;
+    S.adminHourly = document.getElementById('adminHourly').value;
+    S.programFeePct = document.getElementById('programFee').value;
+
+    S.ifmNav = document.getElementById('ifmNav').value;
+
+    return S; 
+  }
+
+  // helpers for validating user provided names
+  function validateName(name) {
+    // ensure mame is alphanumeric plus -
+    return /^[a-z0-9\- ]+$/i.test(String(name).toLowerCase().trim());
+  }
+  function convertNameToKey(name) {
+    // replace spaces with underscores 
+    return String(name).trim().replace(/ /g, '_');
+  }
+  function convertKeyToName(key) {
+    // replace underscores with spaces
+    return String(key).trim().replace(/_/g, ' ');
+  }
+
+  // return state corresponding to name from localStorage. Undefined if not found
+  function lookupState(name) {
+    if (!validateName(name)) return;
+    const key = convertNameToKey(name);
+    const savedStates = JSON.parse(localStorage.getItem('savedStates')) || {};
+    if (savedStates.hasOwnProperty(key)) return savedStates[key];
+    else return undefined; 
+  }
+
+  function renderAutofillOptions() {
+    // console.log("hi");
+    const exampleSelector = document.getElementById('autofillInputSelect');
+    if (!exampleSelector) return;
+    // clear existing options except the first (placeholder)
+    while (exampleSelector.options.length > 1) {
+      exampleSelector.remove(1);
+    }
+    // load saved inputs from localStorage
+    const savedStates = JSON.parse(localStorage.getItem('savedStates')) || {};
+    for (const key in savedStates) {
+        if (savedStates.hasOwnProperty(key)) {
+            // const entry = savedStates[key];
+            const opt = document.createElement('option');
+            // opt.value = entry.name;
+            // opt.textContent = entry.name;
+            const name = convertKeyToName(key); 
+            opt.value = name;
+            opt.textContent = name;
+            exampleSelector.appendChild(opt);
+        }
+    }
+  }
+
+  function saveState() {
+    // ensure inputs are valid
+    if (!validateInputs()) {
+      alert("Cannot save invalid inputs. Please enter valid values and try again.");
+      return; 
+    }
+    const savedStates = JSON.parse(localStorage.getItem('savedStates')) || {};
+
+    // prompt user for a name for this input set
+    const name = prompt('Enter a name for this input set (no special characters):', `Input ${1+Object.keys(savedStates).length}`);
+    if (name === null) return; // user cancelled
+    if (name.length === 0) {
+        alert('Input set name is required. Save cancelled.');
+        return;
+    } 
+
+    // validate name (alphanumeric, underscores, hyphens, spaces only)
+    if (!validateName(name)) {
+        alert('Invalid name. Use only letters, numbers, hyphens, and spaces. Save cancelled.');
+        return;
+    }
+
+    const key = convertNameToKey(name);
+
+    // check if name already exists and ask before overwriting
+    if (savedStates.hasOwnProperty(key)) {
+        const overwrite = confirm(`An input set named "${name}" already exists. Overwrite?`);
+        if (!overwrite) {
+            alert('Save cancelled.');
+            return;
+        }
+    }
+
+    // create state object to save
+    const state = getState(); 
+
+    // add to savedStates
+    savedStates[key] = state;
+
+    // save back to localStorage
+    try {
+        localStorage.setItem('savedStates', JSON.stringify(savedStates));
+        renderAutofillOptions(); // refresh the autofill dropdown
+        alert(`Input set "${name}" saved successfully.`);
+    } catch (error) {
+        console.error(error);
+        alert('Error saving input set. See console for details.');
+        return;
+    }
+  }
+
+  function deleteSelectedSavedState(name) {
+    // deletes a saved input set from localStorage
+    if (!name) return;
+    if (!validateName(name)) {
+        alert('Invalid name. Use only letters, numbers, hyphens, and spaces. Delete cancelled.');
+        return;
+    }
+    const keyname = convertNameToKey(name);
+    const savedStates = JSON.parse(localStorage.getItem('savedStates')) || {};
+    if (!savedStates.hasOwnProperty(keyname)) {
+        alert(`No saved input set found with the name "${name}". Delete cancelled.`);
+        return;
+    }
+    const confirmDelete = confirm(`Are you sure you want to delete the saved input set "${name}"? This action cannot be undone.`);
+    if (!confirmDelete) {
+        alert('Delete cancelled.');
+        return;
+    }
+    delete savedStates[keyname];
+    try {
+        localStorage.setItem('savedStates', JSON.stringify(savedStates));
+        renderAutofillOptions(); // refresh the autofill dropdown
+        alert(`Saved input set "${name}" deleted successfully.`);
+    } catch (error) {
+        console.error(error);
+        alert('Error deleting saved input set. See console for details.');
+        return;
+    }
+  }
+
+  function deleteAllSavedStates() {
+    const confirmDelete = confirm('Are you sure you want to delete ALL saved input sets? This action cannot be undone.');
+    if (!confirmDelete) {
+        alert('Delete all cancelled.');
+        return;
+    }
+    try {
+        localStorage.removeItem('savedStates');
+        renderAutofillOptions(); // refresh the autofill dropdown
+        alert('All saved input sets deleted successfully.');
+    } catch (error) {
+        console.error(error);
+        alert('Error deleting saved input sets. See console for details.');
+        return;
+    }
+}
+
+
+  function autoFillClientsAndAccounts(){
+    const auto = document.getElementById('autoClients').checked;
+    const clientsInput = document.getElementById('numClients'); 
+    if(auto){
+      const AUM = N('aum'), Avg = N('avgClientSize');
+      const calcClients = (Avg>0) ? (AUM/Avg) : 0;
+      clientsInput.value = Math.round(calcClients * 10) / 10;
+      clientsInput.disabled = true;
+    }else{
+      clientsInput.disabled = false;
+    }
+    const accounts = (+clientsInput.value || 0) * 3;
+    document.getElementById('numAccounts').value = Math.round(accounts * 10) / 10;
+  }
+
+  // IFM TRUE program expense (dollars & bps) — detailed breakdown
+  function buildIfmProgram(aum, accounts){
+    const nav = document.getElementById('ifmNav').value || "Weekly";
+
+    // Fixed ($, tax-inclusive)
+    const fundAccounting =
+      nav === "Weekly" ? 2671*12*1.13 :
+      nav === "Monthly" ? 1620*12*1.13 :
+      nav === "Daily" ? 3271*12*1.13 :
+      2671*12*1.13;
+
+    const professional = (7600+4200+1900+1526+(290*4)+(170*12)+571)*1.13 + 577;
+    const trustee = 3500*1.13;
+    const audit = 10000*1.13;
+    const trustBanking = 390*12*1.13;
+
+    const fixedTotal = fundAccounting + professional + trustee + audit + trustBanking;
+
+    // Variable ($) — Shareholder/Record Keeping fixed here
+    const custody = aum * 0.0003 * 1.13;         // 0.03% × 1.13
+    const admin = aum * 0.0010 * 1.13;           // 0.10% × 1.13
+    const shRecord = accounts * RECORD_BASE_PER_ACCOUNT * 1.13; // 28.31 × accounts × 1.13
+    const fundserv = aum * 0.00008;              // 0.008%
+
+    const variableTotal = custody + admin + shRecord + fundserv;
+
+    const trueTotal = fixedTotal + variableTotal;
+    const trueBps = aum>0 ? (trueTotal / aum) * 10000 : 0;
+
+    const pct = (d)=> aum>0 ? (d/aum*100) : 0;
+    const pctFmt = (x)=> (Math.round(x*100)/100).toFixed(2)+'%';
+
+    const html = `
+<div style="margin:6px 0 8px 0;"><strong>Fixed Costs (Tax-Inclusive)</strong></div>
+<table class="small mono" style="width:100%;border-collapse:collapse">
+  <tr><td>Fund Accounting (NAVs)</td><td style="text-align:right">${pctFmt(pct(fundAccounting))}</td><td style="text-align:right">${money(fundAccounting)}</td></tr>
+  <tr><td>Professional Fees</td><td style="text-align:right">${pctFmt(pct(professional))}</td><td style="text-align:right">${money(professional)}</td></tr>
+  <tr><td>Trustee Fees</td><td style="text-align:right">${pctFmt(pct(trustee))}</td><td style="text-align:right">${money(trustee)}</td></tr>
+  <tr><td>Audit</td><td style="text-align:right">${pctFmt(pct(audit))}</td><td style="text-align:right">${money(audit)}</td></tr>
+  <tr><td>Trust Banking</td><td style="text-align:right">${pctFmt(pct(trustBanking))}</td><td style="text-align:right">${money(trustBanking)}</td></tr>
+  <tr><td><strong>Total Fixed</strong></td><td style="text-align:right"><strong>${pctFmt(pct(fixedTotal))}</strong></td><td style="text-align:right"><strong>${money(fixedTotal)}</strong></td></tr>
+</table>
+
+<div style="margin:12px 0 8px 0;"><strong>Variable Costs</strong></div>
+<table class="small mono" style="width:100%;border-collapse:collapse">
+  <tr><td>Custody & Clearing (0.03% × 1.13)</td><td style="text-align:right">0.03%</td><td style="text-align:right">${money(custody)}</td></tr>
+  <tr><td>Administration (0.10% × 1.13)</td><td style="text-align:right">0.10%</td><td style="text-align:right">${money(admin)}</td></tr>
+  <tr><td>Shareholder/Record Keeping</td><td style="text-align:right">${pctFmt(pct(shRecord))}</td><td style="text-align:right">${money(shRecord)}</td></tr>
+  <tr><td>FundServ Fees (0.008%)</td><td style="text-align:right">0.01%</td><td style="text-align:right">${money(fundserv)}</td></tr>
+  <tr><td><strong>Total Variable</strong></td><td style="text-align:right"><strong>${pctFmt(pct(variableTotal))}</strong></td><td style="text-align:right"><strong>${money(variableTotal)}</strong></td></tr>
+</table>
+
+<div style="margin-top:10px"><strong>Total Expense Ratio Excluding Embedded Costs</strong>:
+  <strong>${(trueBps).toFixed(4)} bps</strong> (${(trueBps/100).toFixed(2)}%)
+</div>
+`;
+    const br = document.getElementById('ifmBreakdown');
+    if(br) br.innerHTML = html;
+
+    return { trueBps, trueTotal };
+  }
+
+  function compute(){
+    // const inputFields = [
+    //   'aum', 'avgClientSize', 'numClients', 'numAccounts', 
+    //   'mutualFundsPct', 'etfsPct', 'stocksPct', 'stocksPct', 'fiPct', 'smaPct', 
+    //   'mfCost', 'smaCost', 'etfCost',
+    //   'etfSecs', 'stockSecs', 'fiSecs',
+    //   'tradeCost', 'allocationCost', 'tradingFreq', 'tradeTime', 'adminHourly', 'programFee'
+    // ];
+    // inputFields.forEach(id => {
+    //   clampElVal(document.getElementById(id), 0);
+    // });
+    if (!validateInputs()) return; 
+
+    autoFillClientsAndAccounts();
+
+    const AUM = N('aum');
+    const AvgClient = N('avgClientSize');
+    const Clients = N('numClients');
+    const Accounts = N('numAccounts');
+
+    const pctMF = N('mutualFundsPct')/100;
+    const pctETF = N('etfsPct')/100;
+    const pctStocks = N('stocksPct')/100;
+    const pctFI = N('fiPct')/100;
+    const pctSMA = N('smaPct')/100;
+
+    const feeMF  = N('mfCost')/100;
+    const feeSMA = N('smaCost')/100;
+    const feeETF = N('etfCost')/100;
+
+    const etfSecs = N('etfSecs'), stockSecs = N('stockSecs'), fiSecs = N('fiSecs');
+    const securitiesSum = etfSecs + stockSecs + fiSecs;
+
+    const retailPerTrade = N('tradeCost');     // Advisor per-trade
+    const allocPerTrade  = N('allocationCost'); // PM/APM per-trade
+    const tradeFreq = N('tradingFreq');
+    const tradeMins = N('tradeTime');
+    const adminHr   = N('adminHourly');
+    const programFeePct = N('programFee')/100;
+
+    // Echo read-only cells
+    setText('aumUma', money(AUM));
+    setText('aumIfm', money(AUM));
+    setText('avgClientSizeUma', money(AvgClient));
+    setText('avgClientSizeIfm', money(AvgClient));
+    setText('numClientsUma', Clients.toLocaleString());
+    setText('numClientsIfm', Clients.toLocaleString());
+    setText('numAccountsUma', Accounts.toLocaleString());
+    setText('numAccountsIfm', Accounts.toLocaleString());
+
+    // ---- Advisor (Current) ----
+    const rr_MF   = AUM * pctMF * feeMF;
+    const rr_SMA  = AUM * pctSMA * feeSMA;
+    const rr_ETF  = AUM * pctETF * feeETF;
+    const rr_Trade = Accounts * securitiesSum * retailPerTrade * tradeFreq;
+    const rr_Admin = (tradeMins/60) * Clients * tradeFreq * adminHr;
+    const rr_Program = AUM * programFeePct;
+    const rr_TotalProduct = rr_MF + rr_SMA + rr_ETF;
+    const rr_Total = rr_TotalProduct + rr_Trade + rr_Admin + rr_Program;
+
+    // ---- PM/APM (per-trade cost = allocationCost) ----
+    const pm_MF = rr_MF, pm_SMA = rr_SMA, pm_ETF = rr_ETF;
+    const pm_Trade = Accounts * securitiesSum * allocPerTrade * tradeFreq; // e.g., 60,000 base
+    const pm_Admin = rr_Admin;
+    const pm_Program = rr_Program;
+    const pm_TotalProduct = pm_MF + pm_SMA + pm_ETF;
+
+    // ---- UMA ----
+    const uma_MF  = AUM * 0.30 * 0.004;
+    const uma_SMA = AUM * 0.30 * 0.0025;
+    const uma_ETF = AUM * 0.15 * 0.0025;
+    const uma_Trade = 0;
+    const uma_Admin = 0;
+    const uma_Program = AUM * 0.0015; // 0.15%
+    const uma_TotalProduct = uma_MF + uma_SMA + uma_ETF;
+
+    // ---- IFM Program (detailed)
+    const { trueBps: ifmTrueBps, trueTotal: ifm_Program_true } = buildIfmProgram(AUM, Accounts);
+    const ifm_MF  = AUM * 0.55 * 0.004;
+    const ifm_ETF = AUM * 0.25 * 0.0025;
+    const ifm_Trade = IFM_BLOCK_TRADES * IFM_TRADE_FREQ * IFM_PER_TRADE_COST; // 4,560 base
+    const ifm_Admin = (15/60) * IFM_TRADE_FREQ * adminHr;
+    const ifm_TotalProduct = ifm_MF + ifm_ETF;
+
+    setText('ifmTrueBps', ifmTrueBps.toFixed(4));
+    setText('ifmTrueProgram', money(ifm_Program_true));
+
+    // ---- Savings ----
+    const fmt = (n) => (Math.abs(n) < 1e-9 ? "-" : money(n));
+    const cls = (n) => n >= 0 ? 'good' : 'bad';
+
+    const umaSavings = {
+      mf: rr_MF - uma_MF,
+      sma: rr_SMA - uma_SMA,
+      etf: 0,
+      trade: rr_Trade - uma_Trade,
+      admin: rr_Admin - uma_Admin,
+      program: rr_Program - uma_Program
+    };
+    const ifmSavings = {
+      mf: rr_MF - ifm_MF,
+      etf: rr_ETF - ifm_ETF,
+      trade: pm_Trade - ifm_Trade,  // IFM vs PM/APM for trades
+      admin: rr_Admin - ifm_Admin,
+      program: rr_Program - ifm_Program_true
+    };
+
+    const rows = [
+      ["Product Cost - MF", rr_MF, pm_MF, uma_MF, umaSavings.mf, ifm_MF, ifmSavings.mf],
+      ["Product Cost - SMA", rr_SMA, pm_SMA, uma_SMA, umaSavings.sma, null, null],
+      ["Product Cost - ETF", rr_ETF, pm_ETF, uma_ETF, umaSavings.etf, ifm_ETF, ifmSavings.etf],
+      ["Trade Cost", rr_Trade, pm_Trade, uma_Trade, umaSavings.trade, ifm_Trade, ifmSavings.trade],
+      ["Admin Salary Towards Trading", rr_Admin, pm_Admin, uma_Admin, umaSavings.admin, ifm_Admin, ifmSavings.admin],
+      ["Program Fee (Inc. IFM Vendor Costs)", rr_Program, pm_Program, uma_Program, umaSavings.program, ifm_Program_true, ifmSavings.program],
+      ["Total Product Cost", rr_TotalProduct, pm_TotalProduct, uma_TotalProduct,
+        umaSavings.mf + umaSavings.sma + umaSavings.etf,
+        ifm_TotalProduct, ifmSavings.mf + ifmSavings.etf, "row-strong"],
+      ["Total Trade Cost", rr_Trade, pm_Trade, uma_Trade, umaSavings.trade, ifm_Trade, ifmSavings.trade, "row-strong"],
+      ["Total Employee Time Cost - Trading", rr_Admin, pm_Admin, uma_Admin, umaSavings.admin, ifm_Admin, ifmSavings.admin, "row-strong"],
+      ["Total Program Cost", rr_Program, pm_Program, uma_Program, umaSavings.program, ifm_Program_true, ifmSavings.program, "row-strong"],
+    ];
+
+    const tbody = document.getElementById('results-body'); tbody.innerHTML = "";
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      if(r[7]==="row-strong") tr.className="row-strong";
+      tr.innerHTML = `
+        <td>${r[0]}</td>
+        <td>${fmt(r[1])}</td>
+        <td>${fmt(r[2])}</td>
+        <td>${r[3]==null?'-':fmt(r[3])}</td>
+        <td class="${cls(r[4])}">${fmt(r[4])}</td>
+        <td>${r[5]==null?'-':fmt(r[5])}</td>
+        <td class="${cls(r[6])}">${fmt(r[6])}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Totals in footer
+    const umaSavingsTotal =
+      umaSavings.mf + umaSavings.sma + umaSavings.etf +
+      umaSavings.trade + umaSavings.admin + umaSavings.program;
+
+    const ifmSavingsTotal =
+      ifmSavings.mf + ifmSavings.etf + ifmSavings.trade +
+      ifmSavings.admin + ifmSavings.program;
+
+    const trSave = document.createElement('tr');
+    trSave.className = "totals";
+    trSave.innerHTML = `
+      <td>TOTAL SAVINGS</td>
+      <td></td><td></td><td></td>
+      <td style="font-size:18px">${fmt(umaSavingsTotal)}</td>
+      <td></td>
+      <td style="font-size:18px">${fmt(ifmSavingsTotal)}</td>
+    `;
+    tbody.appendChild(trSave);
+
+    // Summary cards
+    const rr_TotalAll  = rr_Total;
+    const uma_TotalAll = uma_TotalProduct + uma_Trade + uma_Admin + uma_Program;
+    const ifm_TotalAll = ifm_TotalProduct + ifm_Trade + ifm_Admin + ifm_Program_true;
+
+    // setText('retailTotal', money(rr_TotalAll));
+    // setText('umaTotal', money(uma_TotalAll));
+    // setText('ifmTotal', money(ifm_TotalAll));
+  }
+
+  function validateInputs() {
+    let valid = true;
+    // ensure all numeric inputs are non-negative
+    cellArr = document.querySelectorAll('.cell:has(input[type="number"])');
+    for (const cell of cellArr) {
+      const input = cell.querySelector("input");
+      let value = input.value;
+      // console.log(value);
+      if (value === '' || value === undefined || value === NaN) value = -1; 
+      value = Number(value);
+      const min = input.getAttribute("min");
+      if (isNaN(value) || (min && value < min)) {
+        valid = false;
+        cell.classList.add("invalid");
+        // input.setCustomValidity("Input must be a number greater than or equal to 0");
+        // input.reportValidity();
+      } else {
+        cell.classList.remove("invalid");
+      }
+    }
+    // ensure all weights add to 100
+    weightIds = ['mutualFundsPct', 'etfsPct', 'stocksPct', 'fiPct', 'smaPct'];
+    var sum = 0;
+    for (const id of weightIds) {
+      const weight = Number(document.getElementById(id).value) || 0;
+      sum += weight;
+    }
+    if (sum !== 100) valid = false;
+    for (const id of weightIds) {
+      const cell = document.querySelector(`.cell:has(#${id})`);
+      const input = cell.querySelector("input");
+      if (sum !== 100) {
+        cell.classList.add("invalid");
+        // input.setCustomValidity("Allocations must sum to 100%");
+        // input.reportValidity();
+      } else {
+        cell.classList.remove("invalid");
+      }
+    }
+    return valid; 
+  }
+
+  // function clampElVal(el, min, max) {
+  //   if (el !== undefined && min !== undefined && el.value < min) {
+  //     el.value = min;
+  //   }
+  //   if (el !== undefined && min !== undefined && el.value > max) {
+  //     el.value = max;
+  //   }
+  //   return el.value;
+  // }
+
+  function resetToCase(){ 
+    loadState(BASE); 
+    // validateInputs();
+    compute(); 
+  }
+
+  // Wire up
+  const listen = [
+    '#aum','#avgClientSize','#numClients',
+    '#mutualFundsPct','#etfsPct','#stocksPct','#fiPct','#smaPct',
+    '#etfSecs','#stockSecs','#fiSecs',
+    '#mfCost','#smaCost','#etfCost',
+    '#tradeCost','#allocationCost','#tradingFreq','#tradeTime','#adminHourly','#programFee',
+    '#ifmNav'
+  ];
+  document.getElementById('resetBtn').addEventListener('click', resetToCase);
+  document.getElementById('autoClients').addEventListener('change', compute);
+  document.querySelectorAll(listen.join(',')).forEach(el=>el.addEventListener('input', compute));
+  document.getElementById('aum').addEventListener('input', compute);
+  document.getElementById('avgClientSize').addEventListener('input', compute);
+  
+  document.getElementById('saveInputBtn').addEventListener('click', saveState);
+  document.getElementById('deleteAllSavedStates').addEventListener('click', deleteAllSavedStates);
+  document.getElementById('deleteSelectedSavedState').addEventListener('click', () => {
+    const exampleSelect = document.getElementById('autofillInputSelect');
+    if (!exampleSelect) return;
+    const val = exampleSelect.value;
+    if (!val) {
+        alert('Please select a saved input set to delete.');
+        return;
+    }
+    deleteSelectedSavedState(val);
+  });
+  const exampleSelect = document.getElementById('autofillInputSelect');
+  if (exampleSelect) {
+    exampleSelect.addEventListener('change', function () {
+      const name = exampleSelect.value;
+      if (!name) return;
+      // autofillInput(val);
+      loadState(lookupState(name));
+      compute();
+    });
+  }
+
+  // Init
+  resetToCase();
+  renderAutofillOptions();
+  
+
+</script>
+</body>
+</html>
